@@ -1,11 +1,11 @@
 # Development Status
 
 ## Current milestone
-M2 — Resolver + security
+M3 — Flutter Android shell + Share Sheet
 
 ## Roadmap
 - [x] M1 Backend foundation
-- [ ] M2 Resolver + security
+- [x] M2 Resolver + security
 - [ ] M3 Flutter Android shell + Share Sheet
 - [ ] M4 Direct download + MediaStore
 - [ ] M5 End-to-end Android MVP
@@ -20,24 +20,27 @@ M2 — Resolver + security
   URL validation, a structured not-implemented response, and endpoint tests.
 - [x] M2.1 — Added isolated SSRF validation for direct IPs and every DNS-resolved
   address, blocking localhost and non-public destinations with predictable errors.
+- [x] M2.2 — Added yt-dlp metadata extraction and response mapping with an
+  overall timeout, bounded concurrency, and predictable extraction errors.
 
-## Current task — M2.2
-Add initial yt-dlp metadata extraction with timeout and bounded concurrency.
+## Current task — M3.1
+Bootstrap the Flutter Android app shell and receive shared text URLs.
 
 ### Deliverables
-- Add yt-dlp as the resolver implementation without proxying media bytes.
-- Map extracted metadata and downloadable formats to `ResolveResponse`.
-- Add timeout and bounded-concurrency controls with focused tests.
+- Create the Flutter application under `apps/mobile` with Android support.
+- Register the app as an Android Share Sheet target for shared text.
+- Show the received URL in a minimal screen with clear idle and error states.
+- Add focused Flutter tests for the initial screen and shared-text handling.
 
 ### Requirements
-- Preserve M2.1 URL safety checks before extraction.
-- Do not accept cookies or store downloaded media.
-- Return predictable errors for unsupported URLs, timeouts, and extraction failures.
+- Android is the first supported client.
+- Accept only shared HTTP/HTTPS URLs at the client boundary.
+- Do not call the resolver API or download media yet.
 
 ### Acceptance
 - Tests pass.
 - No secrets or binaries committed.
-- Mark M2.2 complete here and set the next explicit task.
+- Mark M3.1 complete here and set the next explicit task.
 
 ## Token-saving rule
 Codex should read `AGENTS.md` + this file first. Read `docs/SPEC.md` only when details are needed. Avoid repository-wide exploration for narrowly scoped tasks.
