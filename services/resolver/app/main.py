@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import AnyHttpUrl, BaseModel, Field
 
+from services.resolver.app.security import UnsafeUrlError, validate_public_url
+
 
 app = FastAPI(title="Media Share Saver Resolver")
 
@@ -45,9 +47,20 @@ def health() -> dict[str, str]:
 @app.post(
     "/api/v1/resolve",
     response_model=ResolveResponse,
-    responses={501: {"model": ErrorResponse}},
+    responses={400: {"model": ErrorResponse}, 501: {"model": ErrorResponse}},
 )
-def resolve(_: ResolveRequest) -> JSONResponse:
+def resolve(request: ResolveRequest) -> JSONResponse:
+    try:
+        validate_public_url(request.url)
+    except UnsafeUrlError:
+        error = ErrorResponse(
+            error=ErrorDetail(
+                code="unsafe_url",
+                message="The URL destination is not allowed.",
+            )
+        )
+        return JSONResponse(status_code=400, content=error.model_dump())
+
     error = ErrorResponse(
         error=ErrorDetail(
             code="resolver_not_implemented",
