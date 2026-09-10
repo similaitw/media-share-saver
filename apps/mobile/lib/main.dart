@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'download_service.dart';
 import 'resolver_client.dart';
 
 void main() {
@@ -8,10 +11,16 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key, this.initialSharedText, this.resolver});
+  const MyApp({
+    super.key,
+    this.initialSharedText,
+    this.resolver,
+    this.downloader,
+  });
 
   final String? initialSharedText;
   final ResolverClient? resolver;
+  final DownloadClient? downloader;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +33,7 @@ class MyApp extends StatelessWidget {
       home: SharedUrlScreen(
         initialSharedText: initialSharedText,
         resolver: resolver ?? HttpResolverClient(),
+        downloader: downloader ?? HttpDownloadClient(),
       ),
     );
   }
@@ -34,10 +44,12 @@ class SharedUrlScreen extends StatefulWidget {
     super.key,
     this.initialSharedText,
     required this.resolver,
+    required this.downloader,
   });
 
   final String? initialSharedText;
   final ResolverClient resolver;
+  final DownloadClient downloader;
 
   @override
   State<SharedUrlScreen> createState() => _SharedUrlScreenState();
@@ -49,6 +61,9 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
   String _status = 'idle';
   ResolveResult? _result;
   String? _errorMessage;
+  MediaFormat? _selectedFormat;
+  DownloadOperation? _downloadOperation;
+  double? _downloadFraction;
 
   @override
   void initState() {
@@ -108,6 +123,7 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
       if (!mounted || _sharedUrl != url) return;
       setState(() {
         _result = result;
+        _selectedFormat = result.formats.isEmpty ? null : result.formats.first;
         _status = 'resolved';
       });
     } on ResolveException catch (error) {
@@ -135,11 +151,92 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
     _resolve(url);
   }
 
+  void _downloadSelected() {
+    final format = _selectedFormat;
+    final result = _result;
+    if (format == null || result == null) return;
+    setState(() {
+      _downloadFraction = null;
+      _errorMessage = null;
+      _status = 'downloading';
+    });
+    final operation = widget.downloader.start(
+      format.url,
+      onProgress: (progress) {
+        if (!mounted) return;
+        setState(() => _downloadFraction = progress.fraction);
+      },
+    );
+    _downloadOperation = operation;
+    operation.future.then((file) async {
+      try {
+        await _saveToMediaStore(file, result.title, format.ext);
+        await file.parent.delete(recursive: true);
+        if (!mounted) return;
+        setState(() => _status = 'saved');
+      } on PlatformException catch (error) {
+        await file.parent.delete(recursive: true);
+        _setDownloadError(error.message ?? 'Could not save the media.');
+      } catch (_) {
+        await file.parent.delete(recursive: true);
+        _setDownloadError('Could not save the media.');
+      }
+    }).catchError((Object error) {
+      if (error is DownloadException && error.message == 'Download cancelled.') {
+        if (mounted) setState(() => _status = 'resolved');
+      } else {
+        _setDownloadError(
+          error is DownloadException
+              ? error.message
+              : 'The media download failed.',
+        );
+      }
+    });
+  }
+
+  Future<void> _saveToMediaStore(
+    File file,
+    String title,
+    String? extension,
+  ) async {
+    final safeTitle = title.replaceAll(RegExp(r'[^a-zA-Z0-9._ -]'), '_');
+    final suffix = extension == null || extension.isEmpty ? 'bin' : extension;
+    await _channel.invokeMethod<String>('saveMediaStore', {
+      'path': file.path,
+      'name': '$safeTitle.$suffix',
+      'mimeType': _mimeType(suffix),
+    });
+  }
+
+  String _mimeType(String extension) {
+    return switch (extension.toLowerCase()) {
+      'mp4' => 'video/mp4',
+      'webm' => 'video/webm',
+      'mkv' => 'video/x-matroska',
+      'mp3' => 'audio/mpeg',
+      'm4a' => 'audio/mp4',
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      _ => 'application/octet-stream',
+    };
+  }
+
+  void _setDownloadError(String message) {
+    if (!mounted) return;
+    setState(() {
+      _errorMessage = message;
+      _status = 'download_error';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = switch (_status) {
       'loading' => 'Resolving URL',
       'resolved' => _result?.title ?? 'URL resolved',
+      'downloading' => 'Downloading media',
+      'saved' => 'Saved to device',
+      'download_error' => 'Download failed',
       'error' => 'Could not resolve URL',
       'invalid' => 'Invalid URL',
       _ => 'Ready to receive a shared URL',
@@ -152,7 +249,7 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (_status == 'loading')
+              if (_status == 'loading' || _status == 'downloading')
                 const CircularProgressIndicator()
               else
                 Icon(
@@ -171,7 +268,51 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
                 const SizedBox(height: 12),
                 Text('${_result!.source} · ${_result!.formats.length} formats'),
                 const SizedBox(height: 4),
-                const Text('Ready for the next step. Media is not downloaded.'),
+                if (_result!.formats.isNotEmpty)
+                  DropdownButton<MediaFormat>(
+                    value: _selectedFormat,
+                    items: _result!.formats
+                        .map(
+                          (format) => DropdownMenuItem(
+                            value: format,
+                            child: Text(
+                              '${format.ext ?? 'file'} ${format.width ?? ''}x${format.height ?? ''}',
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (format) =>
+                        setState(() => _selectedFormat = format),
+                  ),
+                FilledButton.icon(
+                  onPressed: _selectedFormat == null ? null : _downloadSelected,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Download'),
+                ),
+              ],
+              if (_status == 'downloading') ...[
+                const SizedBox(height: 12),
+                if (_downloadFraction != null)
+                  Text('${(_downloadFraction! * 100).round()}%'),
+                TextButton.icon(
+                  onPressed: () => _downloadOperation?.cancel(),
+                  icon: const Icon(Icons.close),
+                  label: const Text('Cancel'),
+                ),
+              ],
+              if (_status == 'saved') ...[
+                const SizedBox(height: 12),
+                const Text('The media was saved to your Downloads folder.'),
+              ],
+              if (_status == 'download_error') ...[
+                const SizedBox(height: 12),
+                Text(_errorMessage ?? 'The media download failed.'),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _downloadSelected,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry download'),
+                ),
               ],
               if (_status == 'invalid') ...[
                 const SizedBox(height: 12),
