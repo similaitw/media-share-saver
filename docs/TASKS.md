@@ -46,9 +46,21 @@ Bootstrap the Flutter Android app shell and receive shared text URLs.
   invalid URL states without calling the backend or downloading media.
 - Added focused widget tests for all three states.
 
-## Current task — M3.2
+## Completed — M3.2
 Connect `POST /api/v1/resolve`, showing loading, resolve results, and error/
 retry states, but do not download media yet.
+
+### Deliverables
+- Added an injectable resolver client using `POST /api/v1/resolve` with
+  structured response and error parsing.
+- Added loading, resolved metadata, connection/error, and retry states.
+- Kept invalid URL handling at the client boundary and did not download media.
+- Added focused tests for successful resolution, failures, retry, and URL
+  rejection.
+
+## Current task — M4.1
+Download a selected resolved format and save it through Android MediaStore,
+with progress and cancellation support.
 
 ## Token-saving rule
 Codex should read `AGENTS.md` + this file first. Read `docs/SPEC.md` only when details are needed. Avoid repository-wide exploration for narrowly scoped tasks.
