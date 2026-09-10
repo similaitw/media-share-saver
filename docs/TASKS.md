@@ -23,7 +23,7 @@ M3 — Flutter Android shell + Share Sheet
 - [x] M2.2 — Added yt-dlp metadata extraction and response mapping with an
   overall timeout, bounded concurrency, and predictable extraction errors.
 
-## Current task — M3.1
+## Completed — M3.1
 Bootstrap the Flutter Android app shell and receive shared text URLs.
 
 ### Deliverables
@@ -40,7 +40,15 @@ Bootstrap the Flutter Android app shell and receive shared text URLs.
 ### Acceptance
 - Tests pass.
 - No secrets or binaries committed.
-- Mark M3.1 complete here and set the next explicit task.
+- Implemented `apps/mobile` as an Android-only Flutter app with an
+  `ACTION_SEND`/`text/plain` intent filter and a native-to-Dart method channel.
+- The client accepts only HTTP/HTTPS URLs and displays idle, received, and
+  invalid URL states without calling the backend or downloading media.
+- Added focused widget tests for all three states.
+
+## Current task — M3.2
+Connect `POST /api/v1/resolve`, showing loading, resolve results, and error/
+retry states, but do not download media yet.
 
 ## Token-saving rule
 Codex should read `AGENTS.md` + this file first. Read `docs/SPEC.md` only when details are needed. Avoid repository-wide exploration for narrowly scoped tasks.
