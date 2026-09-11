@@ -70,9 +70,21 @@ with progress and cancellation support.
 - Added focused tests for download progress, successful streaming, HTTP errors,
   and the download-related UI flow.
 
-## Current task — M4.2
+## Completed — M4.2
 Make downloads resilient across app lifecycle changes and add a small local
 download history view, without introducing account or cloud storage.
+
+### Deliverables
+- Persisted pending, saved, cancelled, and failed download entries in the
+  app support directory using a bounded local JSON history.
+- Observed app lifecycle changes so an in-flight download keeps its state and
+  explains background progress when the app returns to the foreground.
+- Added a local download history screen with saved and failed entries.
+- Added focused tests for history serialization and the empty history state.
+
+## Current task — M5.1
+Complete the Android MVP flow with device validation, user-facing download
+history details, and end-to-end Android verification.
 
 ## Token-saving rule
 Codex should read `AGENTS.md` + this file first. Read `docs/SPEC.md` only when details are needed. Avoid repository-wide exploration for narrowly scoped tasks.

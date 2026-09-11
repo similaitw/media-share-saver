@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'download_service.dart';
+import 'download_history.dart';
 import 'resolver_client.dart';
 
 void main() {
@@ -16,11 +18,13 @@ class MyApp extends StatelessWidget {
     this.initialSharedText,
     this.resolver,
     this.downloader,
+    this.historyStore,
   });
 
   final String? initialSharedText;
   final ResolverClient? resolver;
   final DownloadClient? downloader;
+  final DownloadHistoryStore? historyStore;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +38,7 @@ class MyApp extends StatelessWidget {
         initialSharedText: initialSharedText,
         resolver: resolver ?? HttpResolverClient(),
         downloader: downloader ?? HttpDownloadClient(),
+        historyStore: historyStore ?? DownloadHistoryStore(),
       ),
     );
   }
@@ -45,17 +50,20 @@ class SharedUrlScreen extends StatefulWidget {
     this.initialSharedText,
     required this.resolver,
     required this.downloader,
+    required this.historyStore,
   });
 
   final String? initialSharedText;
   final ResolverClient resolver;
   final DownloadClient downloader;
+  final DownloadHistoryStore historyStore;
 
   @override
   State<SharedUrlScreen> createState() => _SharedUrlScreenState();
 }
 
-class _SharedUrlScreenState extends State<SharedUrlScreen> {
+class _SharedUrlScreenState extends State<SharedUrlScreen>
+  with WidgetsBindingObserver {
   static const _channel = MethodChannel('com.similaitw/media_share');
   String? _sharedUrl;
   String _status = 'idle';
@@ -64,10 +72,14 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
   MediaFormat? _selectedFormat;
   DownloadOperation? _downloadOperation;
   double? _downloadFraction;
+  bool _isInBackground = false;
+  List<DownloadHistoryEntry> _historyEntries = [];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_loadHistory());
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'sharedText' && call.arguments is String) {
         _handleSharedText(call.arguments as String);
@@ -78,6 +90,37 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
     } else {
       _loadInitialSharedText();
     }
+  }
+
+  Future<void> _loadHistory() async {
+    try {
+      await widget.historyStore.load();
+      if (mounted) {
+        setState(() => _historyEntries = widget.historyStore.entries);
+      }
+    } on PlatformException {
+      return;
+    } on MissingPluginException {
+      return;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _isInBackground = true;
+    } else if (state == AppLifecycleState.resumed) {
+      _isInBackground = false;
+      if (mounted && _status == 'downloading') setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _channel.setMethodCallHandler(null);
+    super.dispose();
   }
 
   Future<void> _loadInitialSharedText() async {
@@ -151,7 +194,7 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
     _resolve(url);
   }
 
-  void _downloadSelected() {
+  Future<void> _downloadSelected() async {
     final format = _selectedFormat;
     final result = _result;
     if (format == null || result == null) return;
@@ -160,6 +203,15 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
       _errorMessage = null;
       _status = 'downloading';
     });
+    await widget.historyStore.setPending(
+      DownloadHistoryEntry(
+        title: result.title,
+        url: _sharedUrl ?? '',
+        format: format.ext ?? 'file',
+        status: 'downloading',
+        createdAt: DateTime.now(),
+      ),
+    );
     final operation = widget.downloader.start(
       format.url,
       onProgress: (progress) {
@@ -172,19 +224,27 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
       try {
         await _saveToMediaStore(file, result.title, format.ext);
         await file.parent.delete(recursive: true);
+        await widget.historyStore.completePending(status: 'saved');
+        _historyEntries = widget.historyStore.entries;
         if (!mounted) return;
         setState(() => _status = 'saved');
       } on PlatformException catch (error) {
         await file.parent.delete(recursive: true);
+        await widget.historyStore.completePending(status: 'failed');
+        _historyEntries = widget.historyStore.entries;
         _setDownloadError(error.message ?? 'Could not save the media.');
       } catch (_) {
         await file.parent.delete(recursive: true);
+        await widget.historyStore.completePending(status: 'failed');
+        _historyEntries = widget.historyStore.entries;
         _setDownloadError('Could not save the media.');
       }
     }).catchError((Object error) {
       if (error is DownloadException && error.message == 'Download cancelled.') {
+        unawaited(widget.historyStore.completePending(status: 'cancelled'));
         if (mounted) setState(() => _status = 'resolved');
       } else {
+        unawaited(widget.historyStore.completePending(status: 'failed'));
         _setDownloadError(
           error is DownloadException
               ? error.message
@@ -242,7 +302,20 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
       _ => 'Ready to receive a shared URL',
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Media Share Saver')),
+      appBar: AppBar(
+        title: const Text('Media Share Saver'),
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => DownloadHistoryPage(entries: _historyEntries),
+              ),
+            ),
+            icon: const Icon(Icons.history),
+            tooltip: 'Download history',
+          ),
+        ],
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -292,6 +365,8 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
               ],
               if (_status == 'downloading') ...[
                 const SizedBox(height: 12),
+                if (_isInBackground)
+                  const Text('Download continues while the app is in the background.'),
                 if (_downloadFraction != null)
                   Text('${(_downloadFraction! * 100).round()}%'),
                 TextButton.icon(
@@ -332,6 +407,38 @@ class _SharedUrlScreenState extends State<SharedUrlScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class DownloadHistoryPage extends StatelessWidget {
+  const DownloadHistoryPage({super.key, required this.entries});
+
+  final List<DownloadHistoryEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Download history')),
+      body: entries.isEmpty
+          ? const Center(child: Text('No downloads yet.'))
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: entries.length,
+              separatorBuilder: (_, _) => const Divider(),
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return ListTile(
+                  leading: Icon(
+                    entry.status == 'saved'
+                        ? Icons.check_circle_outline
+                        : Icons.error_outline,
+                  ),
+                  title: Text(entry.title),
+                  subtitle: Text('${entry.format} · ${entry.status}'),
+                );
+              },
+            ),
     );
   }
 }
