@@ -74,12 +74,14 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
   double? _downloadFraction;
   bool _isInBackground = false;
   List<DownloadHistoryEntry> _historyEntries = [];
+  String? _deviceWarning;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_loadHistory());
+    unawaited(_validateDevice());
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'sharedText' && call.arguments is String) {
         _handleSharedText(call.arguments as String);
@@ -102,6 +104,21 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
       return;
     } on MissingPluginException {
       return;
+    }
+  }
+
+  Future<void> _validateDevice() async {
+    try {
+      final supported = await _channel.invokeMethod<bool>(
+        'isMediaStoreSupported',
+      );
+      if (mounted && supported == false) {
+        setState(() => _deviceWarning = 'This Android version cannot save media.');
+      }
+    } on MissingPluginException {
+      return;
+    } on PlatformException {
+      if (mounted) setState(() => _deviceWarning = 'Android storage is unavailable.');
     }
   }
 
@@ -198,6 +215,10 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
     final format = _selectedFormat;
     final result = _result;
     if (format == null || result == null) return;
+    if (_deviceWarning != null) {
+      _setDownloadError(_deviceWarning!);
+      return;
+    }
     setState(() {
       _downloadFraction = null;
       _errorMessage = null;
@@ -322,6 +343,14 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              if (_deviceWarning != null) ...[
+                Text(
+                  _deviceWarning!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                const SizedBox(height: 12),
+              ],
               if (_status == 'loading' || _status == 'downloading')
                 const CircularProgressIndicator()
               else
@@ -435,7 +464,22 @@ class DownloadHistoryPage extends StatelessWidget {
                         : Icons.error_outline,
                   ),
                   title: Text(entry.title),
-                  subtitle: Text('${entry.format} · ${entry.status}'),
+                  subtitle: Text(
+                    '${entry.format} · ${entry.statusLabel} · ${entry.createdAt.toLocal()}',
+                  ),
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: Text(entry.title),
+                      content: SelectableText(entry.url),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),

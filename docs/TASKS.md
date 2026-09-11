@@ -82,9 +82,22 @@ download history view, without introducing account or cloud storage.
 - Added a local download history screen with saved and failed entries.
 - Added focused tests for history serialization and the empty history state.
 
-## Current task — M5.1
+## Completed — M5.1
 Complete the Android MVP flow with device validation, user-facing download
 history details, and end-to-end Android verification.
+
+### Deliverables
+- Added a native MediaStore capability check before starting downloads.
+- Added device/storage warnings for unsupported Android environments.
+- Expanded download history rows with status, timestamp, and source URL
+  details.
+- Verified the complete Flutter flow with static analysis and widget/service
+  tests. Android APK compilation remains environment-blocked when no Android
+  SDK is installed.
+
+## Current task — M5.2
+Add an Android device test target and CI-ready emulator verification for share,
+resolve, download, MediaStore save, and local history persistence.
 
 ## Token-saving rule
 Codex should read `AGENTS.md` + this file first. Read `docs/SPEC.md` only when details are needed. Avoid repository-wide exploration for narrowly scoped tasks.

@@ -18,6 +18,13 @@ class DownloadHistoryEntry {
   final String status;
   final DateTime createdAt;
 
+  String get statusLabel => switch (status) {
+    'saved' => 'Saved',
+    'cancelled' => 'Cancelled',
+    'failed' => 'Failed',
+    _ => status,
+  };
+
   Map<String, dynamic> toJson() => {
     'title': title,
     'url': url,

@@ -21,6 +21,7 @@ class MainActivity : FlutterActivity() {
 			.setMethodCallHandler { call, result ->
 				when (call.method) {
 					"getSharedText" -> result.success(sharedText)
+					"isMediaStoreSupported" -> result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
 					"saveMediaStore" -> saveMediaStore(call, result)
 					else -> result.notImplemented()
 				}
