@@ -1,13 +1,13 @@
 # Development Status
 
 ## Current milestone
-M3 — Flutter Android shell + Share Sheet
+M5 — End-to-end Android MVP
 
 ## Roadmap
 - [x] M1 Backend foundation
 - [x] M2 Resolver + security
-- [ ] M3 Flutter Android shell + Share Sheet
-- [ ] M4 Direct download + MediaStore
+- [x] M3 Flutter Android shell + Share Sheet
+- [x] M4 Direct download + MediaStore
 - [ ] M5 End-to-end Android MVP
 - [ ] M6 GitHub Actions APK build
 - [ ] M7 iOS (later)
@@ -95,11 +95,11 @@ history details, and end-to-end Android verification.
   tests. Android APK compilation remains environment-blocked when no Android
   SDK is installed.
 
-## Completed — M5.2
-Add an Android device test target and CI-ready emulator verification for share,
-resolve, download, MediaStore save, and local history persistence.
+## Current task — M5.2
+Fix Android compilation and make the device/emulator verification workflow pass
+for share, resolve, download, MediaStore save, and local history persistence.
 
-### Deliverables
+### Existing implementation
 - Added an Android `integration_test` target covering shared URL validation,
   resolver output, download completion, MediaStore channel calls, and local
   history persistence on a device.
@@ -107,10 +107,23 @@ resolve, download, MediaStore save, and local history persistence.
   an API 35 Google APIs emulator.
 - Kept device tests independent of external services by injecting test
   resolver/download clients and mocking only the platform save boundary.
-- Local Android execution is blocked here because the Android SDK/emulator is
-  not installed; CI provisions the emulator explicitly.
 
-## Current task — M6.1
+### CI evidence / blocker
+- The Flutter analysis and unit-test job passes.
+- The Android integration job currently fails during `assembleDebug` because
+  `MainActivity.kt` does not compile: `MethodChannel.MethodCall` is unresolved,
+  which cascades into `argument()` and MediaStore value type errors.
+- M5.2 is not complete until Android compilation succeeds and the emulator
+  integration test passes in GitHub Actions.
+
+### Acceptance
+- `flutter analyze` passes.
+- `flutter test` passes.
+- Android `assembleDebug` succeeds.
+- `integration_test/app_test.dart` passes on the CI emulator.
+- After acceptance, mark M5 complete and set M6.1 as the next task.
+
+## Next task — M6.1
 Add a GitHub Actions artifact workflow for a signed-free debug APK and publish
 the build diagnostics without committing generated binaries or credentials.
 
