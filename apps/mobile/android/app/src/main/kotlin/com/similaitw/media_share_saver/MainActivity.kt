@@ -8,6 +8,7 @@ import android.provider.MediaStore
 import java.io.File
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
@@ -50,7 +51,7 @@ class MainActivity : FlutterActivity() {
 		return intent.getStringExtra(Intent.EXTRA_TEXT)?.trim()?.takeIf { it.isNotEmpty() }
 	}
 
-	private fun saveMediaStore(call: MethodChannel.MethodCall, result: MethodChannel.Result) {
+	private fun saveMediaStore(call: MethodCall, result: MethodChannel.Result) {
 		val path = call.argument<String>("path")
 		val name = call.argument<String>("name")
 		val mimeType = call.argument<String>("mimeType")
