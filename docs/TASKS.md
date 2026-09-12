@@ -95,9 +95,24 @@ history details, and end-to-end Android verification.
   tests. Android APK compilation remains environment-blocked when no Android
   SDK is installed.
 
-## Current task — M5.2
+## Completed — M5.2
 Add an Android device test target and CI-ready emulator verification for share,
 resolve, download, MediaStore save, and local history persistence.
+
+### Deliverables
+- Added an Android `integration_test` target covering shared URL validation,
+  resolver output, download completion, MediaStore channel calls, and local
+  history persistence on a device.
+- Added GitHub Actions workflow coverage for Flutter analysis/unit tests and
+  an API 35 Google APIs emulator.
+- Kept device tests independent of external services by injecting test
+  resolver/download clients and mocking only the platform save boundary.
+- Local Android execution is blocked here because the Android SDK/emulator is
+  not installed; CI provisions the emulator explicitly.
+
+## Current task — M6.1
+Add a GitHub Actions artifact workflow for a signed-free debug APK and publish
+the build diagnostics without committing generated binaries or credentials.
 
 ## Token-saving rule
 Codex should read `AGENTS.md` + this file first. Read `docs/SPEC.md` only when details are needed. Avoid repository-wide exploration for narrowly scoped tasks.
