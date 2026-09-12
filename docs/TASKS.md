@@ -1,7 +1,7 @@
 # Development Status
 
 ## Current milestone
-M7 — iOS (later)
+M6.2 — Android physical-device validation
 
 ## Roadmap
 - [x] M1 Backend foundation
@@ -9,8 +9,9 @@ M7 — iOS (later)
 - [x] M3 Flutter Android shell + Share Sheet
 - [x] M4 Direct download + MediaStore
 - [x] M5 End-to-end Android MVP
-- [x] M6 GitHub Actions APK build
-- [ ] M7 iOS (later)
+- [x] M6.1 GitHub Actions APK build
+- [ ] M6.2 Android physical-device validation
+- [ ] M7 iOS (deferred)
 
 ## Completed
 
@@ -138,16 +139,34 @@ and publish build diagnostics without committing generated binaries or credentia
   emulator did not finish booting before timeout; no application compile or test
   failure was reported in that job.
 
-## Current task — M7.1
-Plan the deferred iOS implementation path for Share Extension intake, direct
-media download, Photos saving, and signing/TestFlight requirements without
-changing the Android MVP.
+## Current task — M6.2
+Validate the Android MVP on a physical phone using a resolver endpoint reachable
+outside the Android emulator. iOS work is deferred until this flow is proven.
+
+### Context
+- Physical-device testing confirmed Share Sheet intake and resolver error UI work.
+- The current APK defaults `API_BASE_URL` to `http://10.0.2.2:8000`, which is an
+  Android emulator host alias and is not suitable for a physical phone.
+
+### Deliverables
+- Provide a reachable HTTPS FastAPI/yt-dlp resolver endpoint for physical-device testing.
+- Build the debug APK with that endpoint supplied through `API_BASE_URL` rather than
+  changing the emulator-safe source default.
+- Add a fast resolver health/connectivity check or equivalent clear user-facing
+  diagnostics so an unreachable backend is distinguishable from media extraction failure.
+- Preserve emulator tests and avoid committing credentials, tunnel tokens, or binaries.
 
 ### Acceptance
-- Document the iOS architecture and platform-specific constraints.
-- Identify the minimum native/Flutter integration needed for a Share Extension.
-- Keep Android behavior unchanged.
-- Do not add Apple signing credentials or provisioning profiles to the repository.
+- A physical Android phone can share an HTTP/HTTPS media URL into the app.
+- The phone reaches the resolver over HTTPS and receives a resolve result.
+- A selected format downloads directly on the phone and is saved through MediaStore.
+- The completed/failed attempt appears correctly in local download history.
+- The APK remains reproducible from GitHub Actions without committed secrets.
+
+## Deferred task — M7.1
+Plan the iOS implementation path for Share Extension intake, direct media download,
+Photos saving, and signing/TestFlight requirements. Do not start until Android M6.2
+physical-device validation is complete unless explicitly requested.
 
 ## Token-saving rule
 Codex should read `AGENTS.md` + this file first. Read `docs/SPEC.md` only when details are needed. Avoid repository-wide exploration for narrowly scoped tasks.
