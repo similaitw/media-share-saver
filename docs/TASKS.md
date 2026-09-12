@@ -1,7 +1,7 @@
 # Development Status
 
 ## Current milestone
-M6 — GitHub Actions APK build
+M7 — iOS (later)
 
 ## Roadmap
 - [x] M1 Backend foundation
@@ -9,7 +9,7 @@ M6 — GitHub Actions APK build
 - [x] M3 Flutter Android shell + Share Sheet
 - [x] M4 Direct download + MediaStore
 - [x] M5 End-to-end Android MVP
-- [ ] M6 GitHub Actions APK build
+- [x] M6 GitHub Actions APK build
 - [ ] M7 iOS (later)
 
 ## Completed
@@ -117,16 +117,37 @@ for share, resolve, download, MediaStore save, and local history persistence.
 - Mobile verification run for commit `173fc1fba7562709fedc426c8084d305e9073138`
   completed successfully.
 
-## Current task — M6.1
-Add a GitHub Actions artifact workflow for a signed-free debug APK and publish
-the build diagnostics without committing generated binaries or credentials.
+## Completed — M6.1
+Add a GitHub Actions artifact workflow for a signing-credential-free debug APK
+and publish build diagnostics without committing generated binaries or credentials.
+
+### Deliverables
+- Added a `debug-apk` GitHub Actions job using `flutter build apk --debug`.
+- Added APK size and SHA-256 diagnostics.
+- Uploaded `app-debug.apk` as the `media-share-saver-debug-apk` workflow artifact
+  with 14-day retention.
+- Kept generated APK binaries out of the repository and added no signing
+  credentials or secrets.
+- Preserved the existing Flutter analysis/unit-test and Android emulator jobs.
 
 ### Acceptance
-- Build a debug APK from `apps/mobile` in GitHub Actions.
-- Upload the generated APK as a workflow artifact.
-- Keep generated binaries out of the repository.
-- Do not add signing credentials or secrets for the debug build.
-- Preserve the existing analysis, unit-test, and emulator verification jobs.
+- `debug-apk` job succeeded for commit `45ca1d491dfddcc76a7ac46a35c8ad054deaf977`.
+- APK artifact `media-share-saver-debug-apk` was created successfully.
+- The same workflow run's `flutter` job passed.
+- The same run's `android-integration` job failed only because the hosted runner
+  emulator did not finish booting before timeout; no application compile or test
+  failure was reported in that job.
+
+## Current task — M7.1
+Plan the deferred iOS implementation path for Share Extension intake, direct
+media download, Photos saving, and signing/TestFlight requirements without
+changing the Android MVP.
+
+### Acceptance
+- Document the iOS architecture and platform-specific constraints.
+- Identify the minimum native/Flutter integration needed for a Share Extension.
+- Keep Android behavior unchanged.
+- Do not add Apple signing credentials or provisioning profiles to the repository.
 
 ## Token-saving rule
 Codex should read `AGENTS.md` + this file first. Read `docs/SPEC.md` only when details are needed. Avoid repository-wide exploration for narrowly scoped tasks.
