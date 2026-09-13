@@ -8,6 +8,13 @@ on:
       - 'apps/mobile/**'
       - '.github/workflows/mobile.yml'
       - 'docs/TASKS.md'
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'HTTPS resolver base URL for physical-device debug APK'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   flutter:
@@ -64,7 +71,20 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Build debug APK
-        run: flutter build apk --debug
+        env:
+          API_BASE_URL: ${{ github.event.inputs.api_base_url }}
+        run: |
+          if [ -n "$API_BASE_URL" ]; then
+            case "$API_BASE_URL" in
+              https://*) ;;
+              *) echo "api_base_url must use HTTPS" >&2; exit 1 ;;
+            esac
+            echo "Building physical-device APK with supplied HTTPS resolver endpoint"
+            flutter build apk --debug --dart-define=API_BASE_URL="$API_BASE_URL"
+          else
+            echo "Building default emulator-safe APK"
+            flutter build apk --debug
+          fi
       - name: Show APK diagnostics
         run: |
           ls -lh build/app/outputs/flutter-apk/app-debug.apk
