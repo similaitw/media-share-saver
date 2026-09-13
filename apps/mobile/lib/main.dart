@@ -75,10 +75,12 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
   bool _isInBackground = false;
   List<DownloadHistoryEntry> _historyEntries = [];
   String? _deviceWarning;
+  late final TextEditingController _urlController;
 
   @override
   void initState() {
     super.initState();
+    _urlController = TextEditingController(text: widget.initialSharedText);
     WidgetsBinding.instance.addObserver(this);
     unawaited(_loadHistory());
     unawaited(_validateDevice());
@@ -137,6 +139,7 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _channel.setMethodCallHandler(null);
+    _urlController.dispose();
     super.dispose();
   }
 
@@ -154,6 +157,10 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
   }
 
   void _handleSharedText(String text) {
+    _urlController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
     final uri = Uri.tryParse(text.trim());
     final isHttpUrl = uri != null &&
         uri.host.isNotEmpty &&
@@ -175,6 +182,14 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
       _status = 'loading';
     });
     _resolve(uri.toString());
+  }
+
+  Future<void> _pasteUrl() async {
+    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = clipboardData?.text;
+    if (text != null) {
+      _handleSharedText(text);
+    }
   }
 
   Future<void> _resolve(String url) async {
@@ -362,6 +377,42 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
                 ),
               const SizedBox(height: 16),
               Text(title, textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              TextField(
+                key: const Key('manual-url-field'),
+                controller: _urlController,
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                decoration: const InputDecoration(
+                  labelText: 'Media URL',
+                  hintText: 'https://example.com/video',
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: (_) => _handleSharedText(_urlController.text),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const Key('paste-url-button'),
+                      onPressed: _pasteUrl,
+                      icon: const Icon(Icons.content_paste),
+                      label: const Text('Paste'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      key: const Key('resolve-url-button'),
+                      onPressed: () => _handleSharedText(_urlController.text),
+                      icon: const Icon(Icons.search),
+                      label: const Text('Resolve'),
+                    ),
+                  ),
+                ],
+              ),
               if (_sharedUrl != null) ...[
                 const SizedBox(height: 12),
                 SelectableText(_sharedUrl!, textAlign: TextAlign.center),

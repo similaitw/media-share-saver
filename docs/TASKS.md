@@ -154,6 +154,8 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   changing the emulator-safe source default.
 - Add a fast resolver health/connectivity check or equivalent clear user-facing
   diagnostics so an unreachable backend is distinguishable from media extraction failure.
+- Added the manual URL and Clipboard test entry points to the Flutter widget test
+  suite; both reuse the existing shared-text resolver flow.
 - Preserve emulator tests and avoid committing credentials, tunnel tokens, or binaries.
 
 ### Acceptance

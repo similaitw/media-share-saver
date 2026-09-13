@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_share_saver/main.dart';
 import 'package:media_share_saver/resolver_client.dart';
@@ -44,6 +46,43 @@ void main() {
     expect(find.text('Example video'), findsOneWidget);
     expect(find.textContaining('1 formats'), findsOneWidget);
     expect(resolver.calls, 1);
+  });
+
+  testWidgets('manual HTTPS URL uses the resolver flow', (tester) async {
+    final resolver = FakeResolver(result: resolvedMedia);
+    await tester.pumpWidget(MyApp(resolver: resolver));
+
+    await tester.enterText(
+      find.byKey(const Key('manual-url-field')),
+      'https://example.com/manual',
+    );
+    await tester.tap(find.byKey(const Key('resolve-url-button')));
+    await tester.pump();
+    expect(find.text('Example video'), findsOneWidget);
+    expect(resolver.calls, 1);
+  });
+
+  testWidgets('Clipboard URL uses the same resolver flow', (tester) async {
+    final resolver = FakeResolver(result: resolvedMedia);
+    final messenger = TestDefaultBinaryMessengerBinding
+        .instance
+        .defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.getData') {
+        return <String, dynamic>{'text': 'https://example.com/clipboard'};
+      }
+      return null;
+    });
+
+    try {
+      await tester.pumpWidget(MyApp(resolver: resolver));
+      await tester.tap(find.byKey(const Key('paste-url-button')));
+      await tester.pump();
+      expect(find.text('Example video'), findsOneWidget);
+      expect(resolver.calls, 1);
+    } finally {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    }
   });
 
   testWidgets('shows resolver error and retries', (tester) async {
