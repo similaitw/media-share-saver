@@ -154,8 +154,9 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   changing the emulator-safe source default.
 - Add a fast resolver health/connectivity check or equivalent clear user-facing
   diagnostics so an unreachable backend is distinguishable from media extraction failure.
-- Added the manual URL and Clipboard test entry points to the Flutter widget test
-  suite; both reuse the existing shared-text resolver flow.
+- Validate the existing manual URL and Clipboard entry points through the same
+  shared-text resolver/download flow (implementation and test coverage below;
+  local Flutter execution and physical-device acceptance remain pending).
 - Preserve emulator tests and avoid committing credentials, tunnel tokens, or binaries.
 
 ### Acceptance
@@ -164,6 +165,32 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 - A selected format downloads directly on the phone and is saved through MediaStore.
 - The completed/failed attempt appears correctly in local download history.
 - The APK remains reproducible from GitHub Actions without committed secrets.
+
+### Direct URL intake — control issue #4
+- [x] Inspected and retained the existing URL field, Paste button, `_pasteUrl()`,
+  Resolve button, and shared-text resolver entry point.
+- [x] Added regression coverage for manual Resolve, keyboard submit, valid and
+  invalid/empty clipboard text, invalid manual text, and foreground Share Sheet
+  delivery; retained the initial shared-text tests.
+- [x] Added in-flight request reuse and input/request revisions so repeated
+  submission and edits cannot display stale resolver or clipboard results.
+  Late initial-share retrieval cannot overwrite newer manual input.
+- [x] Made the screen scroll with the keyboard open and disabled manual intake
+  during downloads to preserve the current download/save/history operation.
+- [ ] Execute the expanded Flutter suite and analysis: `flutter analyze` and
+  `flutter test` were attempted from `apps/mobile` on 2026-09-15, but both failed
+  to start because `flutter` is unavailable on PATH; no SDK exists in this
+  workspace. Added tests have not been executed in this environment.
+- [ ] Verify the debug APK: `flutter build apk --debug` was attempted and blocked
+  by the same missing Flutter tooling. Java and ADB are also unavailable on PATH.
+- [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
+  and history on a physical Android phone. No physical-device acceptance was
+  completed by this change; M6.2 remains the current milestone.
+
+### Next task
+Run Flutter analysis/tests and a debug APK build in a configured environment, then
+continue M6.2 physical-device acceptance with a reachable HTTPS resolver, covering
+both direct URL entry and Share Sheet intake.
 
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
