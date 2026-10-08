@@ -183,8 +183,11 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 - [x] Debug APK build and artifact upload passed in GitHub Actions
   Mobile verification #12 for PR #2 (head `f7e9b665`). The Codex workspace
   lacked Flutter, Java, and ADB, so local APK verification was unavailable.
-- [ ] Android integration CI still fails before app tests execute (hosted emulator
-  / ADB `Broken pipe`); this is not evidence of passing device integration.
+- [ ] Android integration CI still fails before app tests execute. In Mobile
+  verification #13 (head `03398ce6`), `assembleDebug` succeeded, but APK
+  installation failed with `adb: ... Can't find service: package` (0 tests
+  executed). Earlier run #12 failed with emulator/ADB `Broken pipe`. These
+  failures are not evidence of passing device integration.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
