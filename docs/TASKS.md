@@ -183,20 +183,21 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 - [x] Debug APK build and artifact upload passed in GitHub Actions
   Mobile verification #12 for PR #2 (head `f7e9b665`). The Codex workspace
   lacked Flutter, Java, and ADB, so local APK verification was unavailable.
-- [ ] Android integration CI still fails before app tests execute. In Mobile
-  verification #13 (head `03398ce6`), `assembleDebug` succeeded, but APK
-  installation failed with `adb: ... Can't find service: package` (0 tests
-  executed). Earlier run #12 failed with emulator/ADB `Broken pipe`. These
-  failures are not evidence of passing device integration.
+- [x] Android emulator integration CI passed in GitHub Actions Mobile
+  verification #14 (head `0e36f83`): the `android-integration` job succeeded,
+  alongside Flutter analysis/tests and debug APK build. Earlier emulator/ADB
+  failures in runs #12 and #13 were not reproduced in this run. This verifies
+  the CI emulator path, not physical-device acceptance.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
 
 ### Next task
-Address or bypass the hosted Android emulator/ADB integration CI failure, then
-continue M6.2 physical-device acceptance with a reachable HTTPS resolver, covering
-both direct URL entry and Share Sheet intake. CI Flutter analysis/tests and debug
-APK build already passed on PR #2 in Mobile verification #12.
+Continue M6.2 physical-device acceptance with a reachable HTTPS resolver,
+covering both direct URL entry and Share Sheet intake through direct download,
+MediaStore save, and local history. GitHub Actions Mobile verification #14 passed
+Flutter analysis/tests, Android emulator integration, and debug APK build;
+physical-device end-to-end evidence is still required before completing M6.2.
 
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
