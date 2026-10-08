@@ -177,20 +177,23 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   Late initial-share retrieval cannot overwrite newer manual input.
 - [x] Made the screen scroll with the keyboard open and disabled manual intake
   during downloads to preserve the current download/save/history operation.
-- [ ] Execute the expanded Flutter suite and analysis: `flutter analyze` and
-  `flutter test` were attempted from `apps/mobile` on 2026-09-15, but both failed
-  to start because `flutter` is unavailable on PATH; no SDK exists in this
-  workspace. Added tests have not been executed in this environment.
-- [ ] Verify the debug APK: `flutter build apk --debug` was attempted and blocked
-  by the same missing Flutter tooling. Java and ADB are also unavailable on PATH.
+- [x] Flutter static analysis and widget tests passed in GitHub Actions
+  Mobile verification #12 for PR #2 (head `f7e9b665`); the Codex workspace
+  itself had no Flutter SDK, so local execution was unavailable.
+- [x] Debug APK build and artifact upload passed in GitHub Actions
+  Mobile verification #12 for PR #2 (head `f7e9b665`). The Codex workspace
+  lacked Flutter, Java, and ADB, so local APK verification was unavailable.
+- [ ] Android integration CI still fails before app tests execute (hosted emulator
+  / ADB `Broken pipe`); this is not evidence of passing device integration.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
 
 ### Next task
-Run Flutter analysis/tests and a debug APK build in a configured environment, then
+Address or bypass the hosted Android emulator/ADB integration CI failure, then
 continue M6.2 physical-device acceptance with a reachable HTTPS resolver, covering
-both direct URL entry and Share Sheet intake.
+both direct URL entry and Share Sheet intake. CI Flutter analysis/tests and debug
+APK build already passed on PR #2 in Mobile verification #12.
 
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
