@@ -193,6 +193,11 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   `android-integration` runner timed out waiting for emulator boot, before
   integration tests could start. Run #14 passed; CI is intermittent, and
   neither run substitutes for physical-device acceptance.
+- [x] GitHub Actions Mobile verification #16 (run `37935083401`, head
+  `56e89b95`) passed all three jobs: `flutter` (analyze and tests),
+  `android-integration` (emulator), and `debug-apk` (build and artifact upload).
+  This confirms CI recovery after the intermittent #15 emulator boot timeout,
+  but does not establish physical-device acceptance.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
