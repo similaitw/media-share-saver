@@ -188,6 +188,11 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   alongside Flutter analysis/tests and debug APK build. Earlier emulator/ADB
   failures in runs #12 and #13 were not reproduced in this run. This verifies
   the CI emulator path, not physical-device acceptance.
+- [x] Recorded CI flakiness in Mobile verification #15 (head `6113116`):
+  Flutter analysis/tests and debug APK build/artifact passed, but the
+  `android-integration` runner timed out waiting for emulator boot, before
+  integration tests could start. Run #14 passed; CI is intermittent, and
+  neither run substitutes for physical-device acceptance.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
