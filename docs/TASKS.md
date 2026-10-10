@@ -154,8 +154,9 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   changing the emulator-safe source default.
 - Add a fast resolver health/connectivity check or equivalent clear user-facing
   diagnostics so an unreachable backend is distinguishable from media extraction failure.
-- Added the manual URL and Clipboard test entry points to the Flutter widget test
-  suite; both reuse the existing shared-text resolver flow.
+- Validate the existing manual URL and Clipboard entry points through the same
+  shared-text resolver/download flow (implementation and test coverage below;
+  local Flutter execution and physical-device acceptance remain pending).
 - Preserve emulator tests and avoid committing credentials, tunnel tokens, or binaries.
 
 ### Acceptance
@@ -164,6 +165,56 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 - A selected format downloads directly on the phone and is saved through MediaStore.
 - The completed/failed attempt appears correctly in local download history.
 - The APK remains reproducible from GitHub Actions without committed secrets.
+
+### Direct URL intake — control issue #4
+- [x] Inspected and retained the existing URL field, Paste button, `_pasteUrl()`,
+  Resolve button, and shared-text resolver entry point.
+- [x] Added regression coverage for manual Resolve, keyboard submit, valid and
+  invalid/empty clipboard text, invalid manual text, and foreground Share Sheet
+  delivery; retained the initial shared-text tests.
+- [x] Added in-flight request reuse and input/request revisions so repeated
+  submission and edits cannot display stale resolver or clipboard results.
+  Late initial-share retrieval cannot overwrite newer manual input.
+- [x] Made the screen scroll with the keyboard open and disabled manual intake
+  during downloads to preserve the current download/save/history operation.
+- [x] Flutter static analysis and widget tests passed in GitHub Actions
+  Mobile verification #12 for PR #2 (head `f7e9b665`); the Codex workspace
+  itself had no Flutter SDK, so local execution was unavailable.
+- [x] Debug APK build and artifact upload passed in GitHub Actions
+  Mobile verification #12 for PR #2 (head `f7e9b665`). The Codex workspace
+  lacked Flutter, Java, and ADB, so local APK verification was unavailable.
+- [x] Android emulator integration CI passed in GitHub Actions Mobile
+  verification #14 (head `0e36f83`): the `android-integration` job succeeded,
+  alongside Flutter analysis/tests and debug APK build. Earlier emulator/ADB
+  failures in runs #12 and #13 were not reproduced in this run. This verifies
+  the CI emulator path, not physical-device acceptance.
+- [x] Recorded CI flakiness in Mobile verification #15 (head `6113116`):
+  Flutter analysis/tests and debug APK build/artifact passed, but the
+  `android-integration` runner timed out waiting for emulator boot, before
+  integration tests could start. Run #14 passed; CI is intermittent, and
+  neither run substitutes for physical-device acceptance.
+- [x] GitHub Actions Mobile verification #16 (run `37935083401`, head
+  `56e89b95`) passed all three jobs: `flutter` (analyze and tests),
+  `android-integration` (emulator), and `debug-apk` (build and artifact upload).
+  This confirms CI recovery after the intermittent #15 emulator boot timeout,
+  but does not establish physical-device acceptance.
+- [x] Recorded Mobile verification #17 (run `37960386479`, head
+  `9199fb4`): `flutter` and `debug-apk` jobs succeeded, while
+  `android-integration` failed in the `reactivecircus/android-emulator-runner`
+  step before tests started (emulator boot timeout reported in the run).
+  This is intermittent CI infrastructure failure, not evidence of an app test
+  regression, and it does not replace physical-device validation.
+- [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
+  and history on a physical Android phone. No physical-device acceptance was
+  completed by this change; M6.2 remains the current milestone.
+
+### Next task
+Continue M6.2 physical-device acceptance with a reachable HTTPS resolver,
+covering both direct URL entry and Share Sheet intake through direct download,
+MediaStore save, and local history. Mobile verification #16 passed all three
+CI jobs; #17 again timed out during emulator startup, while Flutter tests and
+APK build passed. Physical-device end-to-end evidence is still required before
+completing M6.2.
 
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
