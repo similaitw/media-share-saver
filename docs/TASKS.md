@@ -198,6 +198,12 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   `android-integration` (emulator), and `debug-apk` (build and artifact upload).
   This confirms CI recovery after the intermittent #15 emulator boot timeout,
   but does not establish physical-device acceptance.
+- [x] Recorded Mobile verification #17 (run `37960386479`, head
+  `9199fb4`): `flutter` and `debug-apk` jobs succeeded, while
+  `android-integration` failed in the `reactivecircus/android-emulator-runner`
+  step before tests started (emulator boot timeout reported in the run).
+  This is intermittent CI infrastructure failure, not evidence of an app test
+  regression, and it does not replace physical-device validation.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
@@ -205,9 +211,10 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 ### Next task
 Continue M6.2 physical-device acceptance with a reachable HTTPS resolver,
 covering both direct URL entry and Share Sheet intake through direct download,
-MediaStore save, and local history. GitHub Actions Mobile verification #14 passed
-Flutter analysis/tests, Android emulator integration, and debug APK build;
-physical-device end-to-end evidence is still required before completing M6.2.
+MediaStore save, and local history. Mobile verification #16 passed all three
+CI jobs; #17 again timed out during emulator startup, while Flutter tests and
+APK build passed. Physical-device end-to-end evidence is still required before
+completing M6.2.
 
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
