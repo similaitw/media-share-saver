@@ -216,6 +216,11 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   uploaded `media-share-saver-debug-apk`. The workflow used the default emulator
   URL because no `api_base_url` input was supplied, so this does not prove HTTPS
   resolver connectivity or physical-device acceptance.
+- [x] Recorded Mobile verification #20 (run `40183062742`, PR head `8f7070f`):
+  `flutter` and `debug-apk` jobs succeeded and the debug APK artifact was uploaded.
+  The `android-integration` job was cancelled during the emulator-runner step;
+  no integration test result was produced. This run is inconclusive for emulator
+  integration and does not establish physical-device acceptance.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
@@ -223,10 +228,12 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 ### Next task
 Continue M6.2 physical-device acceptance with a reachable HTTPS resolver,
 covering both direct URL entry and Share Sheet intake through direct download,
-MediaStore save, and local history. Mobile verification #19 passed Flutter
-analysis/tests (27 tests), Android emulator integration (2 tests), and debug APK
-build/artifact upload. That run used the default emulator resolver URL, so
-physical-device HTTPS end-to-end evidence is still required before completing M6.2.
+MediaStore save, and local history. Mobile verification #19 remains the latest
+fully passing CI run (27 Flutter tests and 2 emulator integration tests); run #20
+passed Flutter and APK build/artifact jobs but its emulator integration job was
+cancelled before producing a result. The runs used the default emulator resolver
+URL, so physical-device HTTPS end-to-end evidence is still required before M6.2
+can be completed.
 
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
