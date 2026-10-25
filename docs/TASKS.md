@@ -204,6 +204,12 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   step before tests started (emulator boot timeout reported in the run).
   This is intermittent CI infrastructure failure, not evidence of an app test
   regression, and it does not replace physical-device validation.
+- [x] Recorded Mobile verification #18 (run `38022970743`, head
+  `ce2356d`): `flutter` and `debug-apk` jobs succeeded, while
+  `android-integration` timed out waiting for the Android emulator to boot
+  before the integration test script started (`Timeout waiting for emulator to
+  boot`). This is an infrastructure startup failure, not evidence of an app
+  test regression, and it does not replace physical-device validation.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
@@ -212,9 +218,9 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 Continue M6.2 physical-device acceptance with a reachable HTTPS resolver,
 covering both direct URL entry and Share Sheet intake through direct download,
 MediaStore save, and local history. Mobile verification #16 passed all three
-CI jobs; #17 again timed out during emulator startup, while Flutter tests and
-APK build passed. Physical-device end-to-end evidence is still required before
-completing M6.2.
+CI jobs; #17 and #18 timed out during emulator startup, while the Flutter and
+debug APK jobs passed in #18. Physical-device end-to-end evidence is still
+required before completing M6.2.
 
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
