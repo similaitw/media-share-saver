@@ -229,20 +229,28 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   The pull-request run did not supply `api_base_url`, so the APK used the
   default emulator resolver URL and does not prove HTTPS resolver connectivity
   or physical-device acceptance.
+- [x] Mobile verification #22 (run `40219567771`, PR head `f198dbe`):
+  `flutter` and `debug-apk` jobs succeeded, including APK artifact upload.
+  `android-integration` failed before tests started because the hosted Android
+  emulator did not finish booting (`Timeout waiting for emulator to boot` after
+  the 600-second emulator boot timeout). This is an emulator startup/infrastructure
+  failure, not an application test failure; the integration result is unavailable.
+  No `api_base_url` was supplied, so this run does not verify HTTPS resolver
+  connectivity or physical-device acceptance.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
 
 ### Next task
 Continue M6.2 physical-device acceptance with a reachable HTTPS resolver,
-covering both direct URL entry and Share Sheet intake through direct download,
-MediaStore save, and local history. Mobile verification #21 is the latest fully
-passing CI run (27 Flutter tests and 2 emulator integration tests, plus debug APK
-build/artifact upload); run #20's emulator integration job was cancelled before
-producing a result. Run #21 used the default emulator resolver URL because no
-`api_base_url` was supplied, so physical-device HTTPS end-to-end evidence is
-still required before M6.2 can be completed.
-
+covering direct URL entry and Share Sheet intake through real resolve, direct
+download, MediaStore save, and local history. Mobile verification #21 remains
+the latest fully passing CI run (27 Flutter tests and 2 emulator integration
+tests, plus debug APK build/artifact upload). Latest run #22 passed `flutter`
+and `debug-apk` but its `android-integration` job timed out waiting for the
+hosted emulator to boot before tests started. No `api_base_url` was supplied;
+HTTPS resolver connectivity and physical-device end-to-end evidence are still
+required before M6.2 can be completed.
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
 Photos saving, and signing/TestFlight requirements. Do not start until Android M6.2
