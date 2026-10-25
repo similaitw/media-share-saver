@@ -221,6 +221,14 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   The `android-integration` job was cancelled during the emulator-runner step;
   no integration test result was produced. This run is inconclusive for emulator
   integration and does not establish physical-device acceptance.
+- [x] Mobile verification #21 (run `40211073456`, PR head `7e1879a`):
+  all three jobs passed. `flutter analyze` reported no issues and `flutter test`
+  passed 27 tests; Android emulator integration passed 2 tests; `debug-apk`
+  built and uploaded `media-share-saver-debug-apk` (148 MB; APK SHA-256
+  `27466a0a893d099c3a992d937f4f6b7be00cabdfaaf230b22ce6e30aad405329`).
+  The pull-request run did not supply `api_base_url`, so the APK used the
+  default emulator resolver URL and does not prove HTTPS resolver connectivity
+  or physical-device acceptance.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
@@ -228,12 +236,12 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 ### Next task
 Continue M6.2 physical-device acceptance with a reachable HTTPS resolver,
 covering both direct URL entry and Share Sheet intake through direct download,
-MediaStore save, and local history. Mobile verification #19 remains the latest
-fully passing CI run (27 Flutter tests and 2 emulator integration tests); run #20
-passed Flutter and APK build/artifact jobs but its emulator integration job was
-cancelled before producing a result. The runs used the default emulator resolver
-URL, so physical-device HTTPS end-to-end evidence is still required before M6.2
-can be completed.
+MediaStore save, and local history. Mobile verification #21 is the latest fully
+passing CI run (27 Flutter tests and 2 emulator integration tests, plus debug APK
+build/artifact upload); run #20's emulator integration job was cancelled before
+producing a result. Run #21 used the default emulator resolver URL because no
+`api_base_url` was supplied, so physical-device HTTPS end-to-end evidence is
+still required before M6.2 can be completed.
 
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
