@@ -248,6 +248,10 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   package-install failure, not an application test assertion failure; no
   integration-test result was produced. No `api_base_url` was supplied, so this
   run does not verify HTTPS resolver connectivity or physical-device acceptance.
+- [x] CI provenance note: run #23 was executed against code head `2d1d33c`.
+  Documentation-only commits marked `[skip ci]` do not create new test evidence;
+  run #23 remains the latest CI evidence until a newer workflow run is available.
+  HTTPS resolver connectivity and physical-device acceptance remain unverified.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
