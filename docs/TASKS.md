@@ -237,6 +237,14 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
   failure, not an application test failure; the integration result is unavailable.
   No `api_base_url` was supplied, so this run does not verify HTTPS resolver
   connectivity or physical-device acceptance.
+- [x] Mobile verification #23 (run `40221421932`, PR head `2d1d33c`):
+  `flutter` and `debug-apk` succeeded, including APK artifact upload.
+  `android-integration` failed during APK installation before the integration
+  test script ran. ADB reported `Cannot access system provider: 'settings' before
+  system providers are installed!`. This is an Android emulator system-provider/
+  package-install failure, not an application test assertion failure; no
+  integration-test result was produced. No `api_base_url` was supplied, so this
+  run does not verify HTTPS resolver connectivity or physical-device acceptance.
 - [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
   and history on a physical Android phone. No physical-device acceptance was
   completed by this change; M6.2 remains the current milestone.
@@ -246,11 +254,12 @@ Continue M6.2 physical-device acceptance with a reachable HTTPS resolver,
 covering direct URL entry and Share Sheet intake through real resolve, direct
 download, MediaStore save, and local history. Mobile verification #21 remains
 the latest fully passing CI run (27 Flutter tests and 2 emulator integration
-tests, plus debug APK build/artifact upload). Latest run #22 passed `flutter`
-and `debug-apk` but its `android-integration` job timed out waiting for the
-hosted emulator to boot before tests started. No `api_base_url` was supplied;
-HTTPS resolver connectivity and physical-device end-to-end evidence are still
-required before M6.2 can be completed.
+tests, plus debug APK build/artifact upload). Latest run #23 passed `flutter`
+and `debug-apk`, but `android-integration` failed during APK installation
+because the hosted emulator reported that the `settings` system provider was
+not installed yet; the integration tests did not run. No `api_base_url` was
+supplied; HTTPS resolver connectivity and physical-device end-to-end evidence
+are still required before M6.2 can be completed.
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
 Photos saving, and signing/TestFlight requirements. Do not start until Android M6.2
