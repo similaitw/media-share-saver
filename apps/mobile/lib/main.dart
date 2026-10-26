@@ -76,6 +76,9 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
   List<DownloadHistoryEntry> _historyEntries = [];
   String? _deviceWarning;
   late final TextEditingController _urlController;
+  int _inputRevision = 0;
+  int _resolveRevision = 0;
+  final _pendingResolves = <String, Future<ResolveResult>>{};
 
   @override
   void initState() {
@@ -144,9 +147,10 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
   }
 
   Future<void> _loadInitialSharedText() async {
+    final revision = _inputRevision;
     try {
       final sharedText = await _channel.invokeMethod<String>('getSharedText');
-      if (sharedText != null) {
+      if (mounted && revision == _inputRevision && sharedText != null) {
         _handleSharedText(sharedText);
       }
     } on MissingPluginException {
@@ -157,6 +161,8 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
   }
 
   void _handleSharedText(String text) {
+    if (!mounted) return;
+    _inputRevision++;
     _urlController.value = TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(offset: text.length),
@@ -164,20 +170,25 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
     final uri = Uri.tryParse(text.trim());
     final isHttpUrl = uri != null &&
         uri.host.isNotEmpty &&
+        !RegExp(r'\s').hasMatch(text.trim()) &&
         (uri.scheme.toLowerCase() == 'http' ||
             uri.scheme.toLowerCase() == 'https');
     if (!isHttpUrl) {
+      _resolveRevision++;
       setState(() {
         _sharedUrl = null;
         _result = null;
+        _selectedFormat = null;
         _errorMessage = null;
         _status = 'invalid';
       });
       return;
     }
+    if (_status == 'loading' && _sharedUrl == uri.toString()) return;
     setState(() {
       _sharedUrl = uri.toString();
       _result = null;
+      _selectedFormat = null;
       _errorMessage = null;
       _status = 'loading';
     });
@@ -185,40 +196,68 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
   }
 
   Future<void> _pasteUrl() async {
-    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-    final text = clipboardData?.text;
-    if (text != null) {
-      _handleSharedText(text);
+    if (_status == 'downloading') return;
+    final revision = ++_inputRevision;
+    try {
+      final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+      if (!mounted || revision != _inputRevision) return;
+      _handleSharedText(clipboardData?.text ?? '');
+    } on PlatformException {
+      if (!mounted || revision != _inputRevision) return;
+      _handleSharedText('');
     }
   }
 
+  void _editUrl(String text) {
+    _inputRevision++;
+    _resolveRevision++;
+    setState(() {
+      _sharedUrl = null;
+      _result = null;
+      _selectedFormat = null;
+      _errorMessage = null;
+      _status = 'idle';
+    });
+  }
+
   Future<void> _resolve(String url) async {
+    final revision = ++_resolveRevision;
+    Future<ResolveResult>? request;
     try {
-      final result = await widget.resolver.resolve(url);
-      if (!mounted || _sharedUrl != url) return;
+      // Reuse an in-flight request even when the user edits away and back.
+      request = _pendingResolves.putIfAbsent(
+        url,
+        () => widget.resolver.resolve(url),
+      );
+      final result = await request;
+      if (!mounted || revision != _resolveRevision) return;
       setState(() {
         _result = result;
         _selectedFormat = result.formats.isEmpty ? null : result.formats.first;
         _status = 'resolved';
       });
     } on ResolveException catch (error) {
-      if (!mounted || _sharedUrl != url) return;
+      if (!mounted || revision != _resolveRevision) return;
       setState(() {
         _errorMessage = error.message;
         _status = 'error';
       });
     } catch (_) {
-      if (!mounted || _sharedUrl != url) return;
+      if (!mounted || revision != _resolveRevision) return;
       setState(() {
         _errorMessage = 'Unable to resolve this URL.';
         _status = 'error';
       });
+    } finally {
+      if (identical(_pendingResolves[url], request)) {
+        _pendingResolves.remove(url);
+      }
     }
   }
 
   void _retry() {
     final url = _sharedUrl;
-    if (url == null) return;
+    if (url == null || _status == 'loading') return;
     setState(() {
       _errorMessage = null;
       _status = 'loading';
@@ -234,6 +273,8 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
       _setDownloadError(_deviceWarning!);
       return;
     }
+    // A clipboard read started earlier must not replace an active download.
+    _inputRevision++;
     setState(() {
       _downloadFraction = null;
       _errorMessage = null;
@@ -353,7 +394,7 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
         ],
       ),
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -381,6 +422,7 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
               TextField(
                 key: const Key('manual-url-field'),
                 controller: _urlController,
+                enabled: _status != 'downloading',
                 keyboardType: TextInputType.url,
                 textInputAction: TextInputAction.done,
                 autocorrect: false,
@@ -390,6 +432,7 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
                   border: OutlineInputBorder(),
                 ),
                 onSubmitted: (_) => _handleSharedText(_urlController.text),
+                onChanged: _editUrl,
               ),
               const SizedBox(height: 12),
               Row(
@@ -397,7 +440,7 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
                   Expanded(
                     child: OutlinedButton.icon(
                       key: const Key('paste-url-button'),
-                      onPressed: _pasteUrl,
+                      onPressed: _status == 'downloading' ? null : _pasteUrl,
                       icon: const Icon(Icons.content_paste),
                       label: const Text('Paste'),
                     ),
@@ -406,7 +449,9 @@ class _SharedUrlScreenState extends State<SharedUrlScreen>
                   Expanded(
                     child: FilledButton.icon(
                       key: const Key('resolve-url-button'),
-                      onPressed: () => _handleSharedText(_urlController.text),
+                      onPressed: _status == 'downloading'
+                          ? null
+                          : () => _handleSharedText(_urlController.text),
                       icon: const Icon(Icons.search),
                       label: const Text('Resolve'),
                     ),

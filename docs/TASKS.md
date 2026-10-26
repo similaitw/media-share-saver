@@ -152,10 +152,14 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 - Provide a reachable HTTPS FastAPI/yt-dlp resolver endpoint for physical-device testing.
 - Build the debug APK with that endpoint supplied through `API_BASE_URL` rather than
   changing the emulator-safe source default.
-- Add a fast resolver health/connectivity check or equivalent clear user-facing
-  diagnostics so an unreachable backend is distinguishable from media extraction failure.
-- Added the manual URL and Clipboard test entry points to the Flutter widget test
-  suite; both reuse the existing shared-text resolver flow.
+- [x] Implemented clear resolver connectivity diagnostics in `HttpResolverClient`:
+  socket failures report “Could not connect to the resolver.”, timeouts report
+  “The resolver took too long to respond.”, and HTTP extraction errors preserve
+  the resolver's structured message. Physical-device verification against a real
+  HTTPS endpoint remains pending.
+- Validate the existing manual URL and Clipboard entry points through the same
+  shared-text resolver/download flow (implementation and test coverage below;
+  local Flutter execution and physical-device acceptance remain pending).
 - Preserve emulator tests and avoid committing credentials, tunnel tokens, or binaries.
 
 ### Acceptance
@@ -165,6 +169,104 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 - The completed/failed attempt appears correctly in local download history.
 - The APK remains reproducible from GitHub Actions without committed secrets.
 
+### Direct URL intake — control issue #4
+- [x] Inspected and retained the existing URL field, Paste button, `_pasteUrl()`,
+  Resolve button, and shared-text resolver entry point.
+- [x] Added regression coverage for manual Resolve, keyboard submit, valid and
+  invalid/empty clipboard text, invalid manual text, and foreground Share Sheet
+  delivery; retained the initial shared-text tests.
+- [x] Added in-flight request reuse and input/request revisions so repeated
+  submission and edits cannot display stale resolver or clipboard results.
+  Late initial-share retrieval cannot overwrite newer manual input.
+- [x] Made the screen scroll with the keyboard open and disabled manual intake
+  during downloads to preserve the current download/save/history operation.
+- [x] Flutter static analysis and widget tests passed in GitHub Actions
+  Mobile verification #12 for PR #2 (head `f7e9b665`); the Codex workspace
+  itself had no Flutter SDK, so local execution was unavailable.
+- [x] Debug APK build and artifact upload passed in GitHub Actions
+  Mobile verification #12 for PR #2 (head `f7e9b665`). The Codex workspace
+  lacked Flutter, Java, and ADB, so local APK verification was unavailable.
+- [x] Android emulator integration CI passed in GitHub Actions Mobile
+  verification #14 (head `0e36f83`): the `android-integration` job succeeded,
+  alongside Flutter analysis/tests and debug APK build. Earlier emulator/ADB
+  failures in runs #12 and #13 were not reproduced in this run. This verifies
+  the CI emulator path, not physical-device acceptance.
+- [x] Recorded CI flakiness in Mobile verification #15 (head `6113116`):
+  Flutter analysis/tests and debug APK build/artifact passed, but the
+  `android-integration` runner timed out waiting for emulator boot, before
+  integration tests could start. Run #14 passed; CI is intermittent, and
+  neither run substitutes for physical-device acceptance.
+- [x] GitHub Actions Mobile verification #16 (run `37935083401`, head
+  `56e89b95`) passed all three jobs: `flutter` (analyze and tests),
+  `android-integration` (emulator), and `debug-apk` (build and artifact upload).
+  This confirms CI recovery after the intermittent #15 emulator boot timeout,
+  but does not establish physical-device acceptance.
+- [x] Recorded Mobile verification #17 (run `37960386479`, head
+  `9199fb4`): `flutter` and `debug-apk` jobs succeeded, while
+  `android-integration` failed in the `reactivecircus/android-emulator-runner`
+  step before tests started (emulator boot timeout reported in the run).
+  This is intermittent CI infrastructure failure, not evidence of an app test
+  regression, and it does not replace physical-device validation.
+- [x] Recorded Mobile verification #18 (run `38022970743`, head
+  `ce2356d`): `flutter` and `debug-apk` jobs succeeded, while
+  `android-integration` timed out waiting for the Android emulator to boot
+  before the integration test script started (`Timeout waiting for emulator to
+  boot`). This is an infrastructure startup failure, not evidence of an app
+  test regression, and it does not replace physical-device validation.
+- [x] Mobile verification #19 (run `40179801528`, PR head `92c112f`): all
+  three jobs passed. `flutter analyze` reported no issues and `flutter test` passed
+  27 tests; Android emulator integration passed 2 tests; `debug-apk` built and
+  uploaded `media-share-saver-debug-apk`. The workflow used the default emulator
+  URL because no `api_base_url` input was supplied, so this does not prove HTTPS
+  resolver connectivity or physical-device acceptance.
+- [x] Recorded Mobile verification #20 (run `40183062742`, PR head `8f7070f`):
+  `flutter` and `debug-apk` jobs succeeded and the debug APK artifact was uploaded.
+  The `android-integration` job was cancelled during the emulator-runner step;
+  no integration test result was produced. This run is inconclusive for emulator
+  integration and does not establish physical-device acceptance.
+- [x] Mobile verification #21 (run `40211073456`, PR head `7e1879a`):
+  all three jobs passed. `flutter analyze` reported no issues and `flutter test`
+  passed 27 tests; Android emulator integration passed 2 tests; `debug-apk`
+  built and uploaded `media-share-saver-debug-apk` (148 MB; APK SHA-256
+  `27466a0a893d099c3a992d937f4f6b7be00cabdfaaf230b22ce6e30aad405329`).
+  The pull-request run did not supply `api_base_url`, so the APK used the
+  default emulator resolver URL and does not prove HTTPS resolver connectivity
+  or physical-device acceptance.
+- [x] Mobile verification #22 (run `40219567771`, PR head `f198dbe`):
+  `flutter` and `debug-apk` jobs succeeded, including APK artifact upload.
+  `android-integration` failed before tests started because the hosted Android
+  emulator did not finish booting (`Timeout waiting for emulator to boot` after
+  the 600-second emulator boot timeout). This is an emulator startup/infrastructure
+  failure, not an application test failure; the integration result is unavailable.
+  No `api_base_url` was supplied, so this run does not verify HTTPS resolver
+  connectivity or physical-device acceptance.
+- [x] Mobile verification #23 (run `40221421932`, PR head `2d1d33c`):
+  `flutter` and `debug-apk` succeeded, including APK artifact upload.
+  `android-integration` failed during APK installation before the integration
+  test script ran. ADB reported `Cannot access system provider: 'settings' before
+  system providers are installed!`. This is an Android emulator system-provider/
+  package-install failure, not an application test assertion failure; no
+  integration-test result was produced. No `api_base_url` was supplied, so this
+  run does not verify HTTPS resolver connectivity or physical-device acceptance.
+- [x] CI provenance note: run #23 was executed against code head `2d1d33c`.
+  Documentation-only commits marked `[skip ci]` do not create new test evidence;
+  run #23 remains the latest CI evidence until a newer workflow run is available.
+  HTTPS resolver connectivity and physical-device acceptance remain unverified.
+- [ ] Verify direct Paste/manual entry through real resolver, download, MediaStore,
+  and history on a physical Android phone. No physical-device acceptance was
+  completed by this change; M6.2 remains the current milestone.
+
+### Next task
+Continue M6.2 physical-device acceptance with a reachable HTTPS resolver,
+covering direct URL entry and Share Sheet intake through real resolve, direct
+download, MediaStore save, and local history. Mobile verification #21 remains
+the latest fully passing CI run (27 Flutter tests and 2 emulator integration
+tests, plus debug APK build/artifact upload). Latest run #23 passed `flutter`
+and `debug-apk`, but `android-integration` failed during APK installation
+because the hosted emulator reported that the `settings` system provider was
+not installed yet; the integration tests did not run. No `api_base_url` was
+supplied; HTTPS resolver connectivity and physical-device end-to-end evidence
+are still required before M6.2 can be completed.
 ## Deferred task — M7.1
 Plan the iOS implementation path for Share Extension intake, direct media download,
 Photos saving, and signing/TestFlight requirements. Do not start until Android M6.2
