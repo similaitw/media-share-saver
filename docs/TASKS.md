@@ -152,8 +152,11 @@ outside the Android emulator. iOS work is deferred until this flow is proven.
 - Provide a reachable HTTPS FastAPI/yt-dlp resolver endpoint for physical-device testing.
 - Build the debug APK with that endpoint supplied through `API_BASE_URL` rather than
   changing the emulator-safe source default.
-- Add a fast resolver health/connectivity check or equivalent clear user-facing
-  diagnostics so an unreachable backend is distinguishable from media extraction failure.
+- [x] Implemented clear resolver connectivity diagnostics in `HttpResolverClient`:
+  socket failures report “Could not connect to the resolver.”, timeouts report
+  “The resolver took too long to respond.”, and HTTP extraction errors preserve
+  the resolver's structured message. Physical-device verification against a real
+  HTTPS endpoint remains pending.
 - Validate the existing manual URL and Clipboard entry points through the same
   shared-text resolver/download flow (implementation and test coverage below;
   local Flutter execution and physical-device acceptance remain pending).
